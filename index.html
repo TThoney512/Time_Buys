@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时间买家</title>
+    <style>
+        /* ===== 全局重置 & 北欧风格 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #f7f3ee;
+            --bg-card: #fefcf9;
+            --bg-tab: #ede8e2;
+            --text-primary: #3d352e;
+            --text-secondary: #7a6e64;
+            --text-light: #b5a89c;
+            --accent: #c9a88b;
+            --accent-dark: #b0886a;
+            --accent-light: #e6d5c4;
+            --gold: #d4b68a;
+            --shadow: rgba(120, 100, 80, 0.10);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --font: 'Georgia', 'Times New Roman', 'Songti SC', serif;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-light);
+            border-radius: 4px;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            position: relative;
+            background: var(--bg-primary);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ===== 顶部状态栏 ===== */
+        .header {
+            flex-shrink: 0;
+            padding: 12px 16px 8px;
+            background: var(--bg-primary);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .game-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            padding: 4px 14px 4px 12px;
+            border-radius: 30px;
+            box-shadow: 0 2px 8px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .game-title span {
+            font-size: 12px;
+            opacity: 0.4;
+            font-weight: 400;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            padding: 4px 12px 4px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            box-shadow: 0 2px 8px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+        .stat-item .num {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 14px;
+            min-width: 20px;
+        }
+
+        .balance-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            padding: 4px 4px 0;
+            margin-top: 2px;
+        }
+        .balance-row .label {
+            font-size: 11px;
+            color: var(--text-light);
+            letter-spacing: 2px;
+        }
+        .balance-row .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s;
+        }
+        .balance-row .amount.low {
+            color: #c0392b;
+        }
+        .balance-row .amount.warn {
+            color: #d4a017;
+        }
+        .balance-row .sub {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-left: 6px;
+            font-weight: 400;
+        }
+
+        /* ===== 分类标签 ===== */
+        .tabs {
+            flex-shrink: 0;
+            padding: 4px 12px 6px;
+            overflow-x: auto;
+            display: flex;
+            gap: 6px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-btn {
+            flex-shrink: 0;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 30px;
+            background: var(--bg-tab);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+        }
+        .tab-btn:active {
+            transform: scale(0.95);
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(201, 168, 139, 0.3);
+        }
+        .tab-btn .count {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-left: 3px;
+            font-weight: 400;
+        }
+        .tab-btn.active .count {
+            opacity: 0.8;
+        }
+
+        /* ===== 商品列表 ===== */
+        .goods-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 12px 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .goods-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding-bottom: 8px;
+        }
+
+        .goods-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 12px 10px 10px;
+            box-shadow: 0 2px 12px var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            min-height: 80px;
+        }
+        .goods-card:active {
+            transform: scale(0.97);
+        }
+        .goods-card.locked {
+            opacity: 0.45;
+            filter: grayscale(0.5);
+            pointer-events: none;
+        }
+        .goods-card.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            font-size: 13px;
+        }
+        .goods-card .name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+            margin-bottom: 2px;
+            padding-right: 20px;
+        }
+        .goods-card .meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .goods-card .meta .rarity {
+            padding: 1px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .rarity-普通 {
+            background: #e8e4de;
+            color: #7a6e64;
+        }
+        .rarity-稀有 {
+            background: #d4e4e8;
+            color: #2c7a8a;
+        }
+        .rarity-史诗 {
+            background: #e6d4e8;
+            color: #7a4a8a;
+        }
+        .rarity-传说 {
+            background: #f0e4c8;
+            color: #b8882a;
+        }
+
+        .goods-card .price {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent-dark);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .goods-card .price small {
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--text-light);
+        }
+        .goods-card .buy-btn {
+            margin-top: 6px;
+            padding: 5px 0;
+            border: none;
+            border-radius: 30px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            letter-spacing: 0.5px;
+        }
+        .goods-card .buy-btn:active {
+            transform: scale(0.95);
+        }
+        .goods-card .buy-btn:disabled {
+            background: var(--bg-tab);
+            color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+        .goods-card .buy-btn.owned {
+            background: #c8d6c0;
+            color: #4a6a3a;
+        }
+        .goods-card .buy-btn.owned:active {
+            transform: scale(0.95);
+        }
+        .goods-card .tag-owned {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        /* ===== 底部结算栏 ===== */
+        .footer {
+            flex-shrink: 0;
+            padding: 8px 16px 14px;
+            background: var(--bg-primary);
+            border-top: 1px solid rgba(0, 0, 0, 0.03);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-settle {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 40px;
+            background: var(--text-primary);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 1.5px;
+            box-shadow: 0 4px 16px rgba(61, 53, 46, 0.15);
+        }
+        .btn-settle:active {
+            transform: scale(0.96);
+        }
+        .btn-settle:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 40px;
+            background: var(--bg-tab);
+            color: var(--text-secondary);
+            font-size: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+        }
+        .btn-reset:active {
+            transform: scale(0.92);
+        }
+
+        /* ===== 结算弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(40, 35, 30, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 400px;
+            width: 100%;
+            padding: 28px 24px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-box .badge {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: var(--accent-light);
+            color: var(--accent-dark);
+            margin-bottom: 12px;
+        }
+        .modal-box .badge.easter {
+            background: #f0e4c8;
+            color: #b8882a;
+        }
+
+        .modal-box .comment {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin: 8px 0 6px;
+            padding: 0 4px;
+        }
+
+        .modal-box .sub-comment {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-top: 6px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 12px;
+        }
+
+        .modal-box .stats-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+            margin: 14px 0 16px;
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .modal-box .stats-breakdown .label {
+            opacity: 0.7;
+        }
+        .modal-box .stats-breakdown .value {
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .modal-box .btn-close {
+            margin-top: 6px;
+            padding: 10px 32px;
+            border: none;
+            border-radius: 40px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 1px;
+        }
+        .modal-box .btn-close:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== 开始界面 ===== */
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 30px 24px;
+            text-align: center;
+            background: var(--bg-primary);
+        }
+        .start-screen h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .start-screen .sub {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+        }
+        .start-screen .desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            max-width: 320px;
+            margin: 0 auto 20px;
+            opacity: 0.8;
+        }
+        .start-screen .position-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto;
+        }
+        .start-screen .pos-btn {
+            padding: 12px 10px;
+            border: 2px solid var(--bg-tab);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        .start-screen .pos-btn:active {
+            transform: scale(0.95);
+        }
+        .start-screen .pos-btn.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 4px 16px rgba(201, 168, 139, 0.2);
+        }
+        .start-screen .pos-btn .emoji {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 1px;
+        }
+        .start-screen .pos-btn .label {
+            font-size: 12px;
+        }
+
+        .start-screen .btn-start {
+            margin-top: 20px;
+            padding: 12px 44px;
+            border: none;
+            border-radius: 40px;
+            background: var(--text-primary);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 2px;
+            box-shadow: 0 4px 16px rgba(61, 53, 46, 0.15);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .start-screen .btn-start.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .start-screen .btn-start:active {
+            transform: scale(0.95);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 400px) {
+            .header {
+                padding: 8px 10px 4px;
+            }
+            .game-title {
+                font-size: 14px;
+                padding: 3px 10px 3px 8px;
+            }
+            .stat-item {
+                font-size: 10px;
+                padding: 3px 8px 3px 6px;
+            }
+            .stat-item .num {
+                font-size: 12px;
+                min-width: 16px;
+            }
+            .balance-row .amount {
+                font-size: 22px;
+            }
+            .balance-row .label {
+                font-size: 10px;
+            }
+            .goods-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .goods-card {
+                padding: 8px 8px 8px;
+                min-height: 70px;
+            }
+            .goods-card .name {
+                font-size: 12px;
+            }
+            .goods-card .price {
+                font-size: 13px;
+            }
+            .modal-box .comment {
+                font-size: 20px;
+            }
+            .tab-btn {
+                font-size: 11px;
+                padding: 5px 12px;
+            }
+            .start-screen h1 {
+                font-size: 26px;
+            }
+            .start-screen .pos-btn {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+            .btn-settle {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+        }
+
+        @media (min-width: 600px) {
+            #app {
+                border-left: 1px solid rgba(0, 0, 0, 0.04);
+                border-right: 1px solid rgba(0, 0, 0, 0.04);
+            }
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gap-2 {
+            gap: 8px;
+        }
+        .text-ellipsis {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- ===== 开始界面 ===== -->
+        <div id="startScreen" class="start-screen">
+            <h1>📖 时间买家</h1>
+            <p class="sub">用一生的时间，去买你想要的</p>
+            <p class="desc">你拥有 <strong>30,000 天</strong>（约82年）。<br>时间以 <strong>14天/秒</strong> 自然流逝。<br>人生无常，每100秒会随机降临一件负面事件。</p>
+            <div style="width:100%;max-width:340px;text-align:left;margin:0 auto 10px;font-size:12px;color:var(--text-secondary);opacity:0.7;padding-left:4px;">
+                👤 选择你的人生定位：
+            </div>
+            <div class="position-grid" id="positionGrid">
+                <button class="pos-btn" data-pos="1"><span class="emoji">🏛️</span><span class="label">富豪·事业型</span></button>
+                <button class="pos-btn" data-pos="2"><span class="emoji">🏠</span><span class="label">家庭型</span></button>
+                <button class="pos-btn" data-pos="3"><span class="emoji">🌍</span><span class="label">探险家·体验型</span></button>
+                <button class="pos-btn" data-pos="4"><span class="emoji">📚</span><span class="label">学霸·认知型</span></button>
+                <button class="pos-btn" data-pos="5"><span class="emoji">🧘</span><span class="label">健康达人</span></button>
+                <button class="pos-btn" data-pos="6"><span class="emoji">⚖️</span><span class="label">均衡·随机型</span></button>
+            </div>
+            <button class="btn-start" id="btnStart">开始你的人生</button>
+        </div>
+
+        <!-- ===== 游戏主界面 ===== -->
+        <div id="gameScreen" class="hidden" style="display:flex;flex-direction:column;height:100%;">
+
+            <!-- 顶部 -->
+            <div class="header">
+                <div class="header-row">
+                    <div class="game-title">⏳ 时间买家 <span>· 账本</span></div>
+                    <div class="header-stats">
+                        <div class="stat-item">💰 <span class="num" id="spentDisplay">0</span></div>
+                        <div class="stat-item">📦 <span class="num" id="ownedCount">0</span></div>
+                    </div>
+                </div>
+                <div class="balance-row">
+                    <span class="label">剩余天数</span>
+                    <span>
+                        <span class="amount" id="balanceDisplay">30,000</span>
+                        <span class="sub">流逝 <span id="passiveDisplay">0</span></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 分类标签 -->
+            <div class="tabs" id="tabsContainer"></div>
+
+            <!-- 商品列表 -->
+            <div class="goods-area" id="goodsArea">
+                <div class="goods-grid" id="goodsGrid"></div>
+            </div>
+
+            <!-- 底部 -->
+            <div class="footer">
+                <button class="btn-reset" id="btnReset">↺</button>
+                <button class="btn-settle" id="btnSettle">📜 结算 · 看账单</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 弹窗容器 ===== -->
+    <div id="modalContainer"></div>
+
+    <script>
+        // ================================================================
+        //  1. 商品数据（96件，按价格升序）
+        // ================================================================
+        const GOODS_DATA = [
+            { id: 'C1-006', name: '达到深度冥想境界', category: '认知', rarity: '普通', price: 180, unlock: 0 },
+            { id: 'C4-006', name: '在旅途中与陌生人深度对谈', category: '社交', rarity: '普通', price: 180, unlock: 0 },
+            { id: 'C3-010', name: '见证孩子的人生关键时刻', category: '家庭', rarity: '普通', price: 240, unlock: 0 },
+            { id: 'C7-012', name: '坚持50年奔赴每一场日出', category: '娱乐', rarity: '普通', price: 240, unlock: 0 },
+            { id: 'C3-008', name: '建立家族年度传统仪式', category: '家庭', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C1-010', name: '阅尽百部影史经典', category: '认知', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C2-011', name: '拿下梦想的第一份工作', category: '事业', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C4-004', name: '为挚友实现一个梦想', category: '社交', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C5-012', name: '买回童年时渴望的那件东西', category: '消费', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C6-009', name: '乘坐热气球看世界醒来', category: '体验', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C7-007', name: '在万人音乐节尽情狂欢', category: '娱乐', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C8-009', name: '坚持每日冥想十年', category: '健康', rarity: '普通', price: 300, unlock: 0 },
+            { id: 'C1-009', name: '坚持写作十年', category: '认知', rarity: '普通', price: 360, unlock: 0 },
+            { id: 'C3-004', name: '策划一次全家难忘旅行', category: '家庭', rarity: '普通', price: 360, unlock: 0 },
+            { id: 'C6-003', name: '从万米高空纵身一跃', category: '体验', rarity: '普通', price: 360, unlock: 0 },
+            { id: 'C7-004', name: '追完全球热门剧集', category: '娱乐', rarity: '普通', price: 360, unlock: 0 },
+            { id: 'C8-005', name: '完成一次全程马拉松', category: '健康', rarity: '普通', price: 360, unlock: 0 },
+            { id: 'C1-005', name: '掌握钢琴演奏技能', category: '认知', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C3-006', name: '与兄弟姐妹一生亲密', category: '家庭', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C4-011', name: '与好友保持每周相聚一年', category: '社交', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C5-009', name: '全套高端定制西装/礼服', category: '消费', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C6-012', name: '在星空下露营100夜', category: '体验', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C7-009', name: '看遍奥斯卡最佳影片全记录', category: '娱乐', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C8-006', name: '精通太极/瑜伽养生功法', category: '健康', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C2-004', name: '交付一个改变行业的大项目', category: '事业', rarity: '稀有', price: 450, unlock: 0 },
+            { id: 'C4-012', name: '勇敢修复一段破裂的友谊', category: '社交', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C1-007', name: '获得国际专业资质认证', category: '认知', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C5-004', name: '米其林三星自由品鉴年卡', category: '消费', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C6-010', name: '自驾穿越一个国家的山河', category: '体验', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C7-005', name: '全球主题乐园无限畅玩年卡', category: '娱乐', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C8-004', name: '全年心理咨询师陪伴', category: '健康', rarity: '稀有', price: 540, unlock: 0 },
+            { id: 'C8-003', name: '年度顶级全面体检（终身）', category: '健康', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C1-002', name: '通读1000本经典著作', category: '认知', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C2-007', name: '拥有个人核心专利', category: '事业', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C3-007', name: '养一只宠物相伴终生', category: '家庭', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C4-002', name: '组织一场百人盛会', category: '社交', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C6-004', name: '潜入深海触摸未知', category: '体验', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C7-003', name: '沉浸式游戏一整年', category: '娱乐', rarity: '稀有', price: 600, unlock: 0 },
+            { id: 'C1-011', name: '掌握木工/陶艺大师级技艺', category: '认知', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C2-005', name: '晋升为高管层', category: '事业', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C3-005', name: '打造一个温暖的家', category: '家庭', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C4-005', name: '创建一个有影响力的兴趣社群', category: '社交', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C6-002', name: '在北极圈守候极光', category: '体验', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C7-002', name: '全年演唱会VIP前排专享', category: '娱乐', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C8-010', name: '拥有贯穿一生的高质量睡眠', category: '健康', rarity: '稀有', price: 750, unlock: 0 },
+            { id: 'C2-012', name: '成功实现事业转型', category: '事业', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C1-003', name: '精通五国语言', category: '认知', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C4-009', name: '发起一次有影响力的公益募捐', category: '社交', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C6-006', name: '徒步穿越无人沙漠', category: '体验', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C7-010', name: '沉浸式剧本杀100场', category: '娱乐', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C8-008', name: '在自然中深度静修一个月', category: '健康', rarity: '史诗', price: 840, unlock: 6000 },
+            { id: 'C2-003', name: '获得行业至高荣誉大奖', category: '事业', rarity: '史诗', price: 900, unlock: 6000 },
+            { id: 'C3-011', name: '与家人达成深度和解', category: '家庭', rarity: '史诗', price: 900, unlock: 6000 },
+            { id: 'C4-008', name: '拥有一段跨越二十年的友谊', category: '社交', rarity: '史诗', price: 900, unlock: 6000 },
+            { id: 'C7-006', name: '收藏全套经典游戏', category: '娱乐', rarity: '史诗', price: 900, unlock: 6000 },
+            { id: 'C8-011', name: '与自己的身体达成和解', category: '健康', rarity: '史诗', price: 900, unlock: 6000 },
+            { id: 'C1-004', name: '出版个人专著', category: '认知', rarity: '史诗', price: 960, unlock: 6000 },
+            { id: 'C5-006', name: '顶级设计师全屋定制家具', category: '消费', rarity: '史诗', price: 960, unlock: 6000 },
+            { id: 'C6-008', name: '在无人岛独居一个月', category: '体验', rarity: '史诗', price: 960, unlock: 6000 },
+            { id: 'C1-008', name: '全球游学一年', category: '认知', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C2-010', name: '带领团队获得行业冠军', category: '事业', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C3-003', name: '陪伴父母走完晚年', category: '家庭', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C4-007', name: '在行业顶级大会发表演讲', category: '社交', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C5-011', name: '全球高端酒店全年随心住', category: '消费', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C6-001', name: '环游世界', category: '体验', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C7-001', name: '私人影院', category: '娱乐', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C8-007', name: '拥有一个私人家庭健身房', category: '健康', rarity: '史诗', price: 1050, unlock: 6000 },
+            { id: 'C6-011', name: '亲手参与一次考古挖掘', category: '体验', rarity: '史诗', price: 1140, unlock: 6000 },
+            { id: 'C1-001', name: '博士学位', category: '认知', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C2-006', name: '创办个人知名工作室', category: '事业', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C4-001', name: '结交100位挚友', category: '社交', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C5-007', name: '收藏一枚传世限量名表', category: '消费', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C7-008', name: '拥有一个专属家庭KTV房', category: '娱乐', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C8-002', name: '十年私人教练全程陪伴', category: '健康', rarity: '史诗', price: 1200, unlock: 6000 },
+            { id: 'C3-012', name: '撰写家族记忆史', category: '家庭', rarity: '史诗', price: 1260, unlock: 6000 },
+            { id: 'C1-012', name: '完成哲学思辨修行', category: '认知', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C2-008', name: '成为行业顶级意见领袖', category: '事业', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C3-009', name: '与伴侣共同经营事业', category: '家庭', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C5-003', name: '拥有一整面墙的奢侈品收藏', category: '消费', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C6-007', name: '在南极大陆参与科考', category: '体验', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C7-011', name: '在顶级餐厅享用100顿大餐', category: '娱乐', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C8-012', name: '临终时心中无憾', category: '健康', rarity: '史诗', price: 1350, unlock: 6000 },
+            { id: 'C3-001', name: '与爱人白头偕老', category: '家庭', rarity: '史诗', price: 1800, unlock: 6000 },
+            { id: 'C8-001', name: '长寿秘诀', category: '健康', rarity: '史诗', price: 1500, unlock: 6000 },
+            { id: 'C2-009', name: '完成千万级融资', category: '事业', rarity: '史诗', price: 1500, unlock: 6000 },
+            { id: 'C4-010', name: '成为社区的精神领袖', category: '社交', rarity: '史诗', price: 1500, unlock: 6000 },
+            { id: 'C5-008', name: '拥有一个私人珍藏酒窖', category: '消费', rarity: '史诗', price: 1500, unlock: 6000 },
+            { id: 'C6-005', name: '登顶世界之巅珠穆朗玛', category: '体验', rarity: '史诗', price: 1500, unlock: 6000 },
+            { id: 'C3-002', name: '培养一个孩子成人', category: '家庭', rarity: '史诗', price: 1440, unlock: 6000 },
+            { id: 'C4-003', name: '加入顶级精英圈层', category: '社交', rarity: '史诗', price: 1440, unlock: 6000 },
+            { id: 'C5-002', name: '限量版顶级跑车', category: '消费', rarity: '传说', price: 1950, unlock: 9000 },
+            { id: 'C2-002', name: '成为世界500强CEO', category: '事业', rarity: '传说', price: 1950, unlock: 9000 },
+            { id: 'C5-010', name: '一线城市核心区私宅', category: '消费', rarity: '传说', price: 2100, unlock: 9000 },
+            { id: 'C5-005', name: '拥有一架私人公务机', category: '消费', rarity: '传说', price: 2550, unlock: 9000 },
+            { id: 'C5-001', name: '海景别墅', category: '消费', rarity: '传说', price: 2700, unlock: 9000 },
+            { id: 'C2-001', name: '创业上市', category: '事业', rarity: '传说', price: 2700, unlock: 9000 },
+        ];
+
+        // ================================================================
+        //  2. 评语模板（扩展）
+        // ================================================================
+        const TEMPLATES = {
+            S: [
+                { code: 'S-01', content: '你的一生，长在了家庭里。', category: '家庭', minRatio: 0.40 },
+                { code: 'S-02', content: '你的人生底盘，是事业。', category: '事业', minRatio: 0.40 },
+                { code: 'S-03', content: '你用钱买了全世界。', category: ['体验', '消费'], minRatio: 0.40 },
+                { code: 'S-04', content: '你把时间炼成了知识。', category: '认知', minRatio: 0.40 },
+                { code: 'S-05', content: '你活着，就是为了体验。', category: '体验', minRatio: 0.35 },
+                { code: 'S-06', content: '你的身体，是你最贵的资产。', category: '健康', minRatio: 0.40 },
+                { code: 'S-07', content: '你买了满屋子的快乐。', category: '娱乐', minRatio: 0.40 },
+                { code: 'S-08', content: '你这辈子，都在交朋友。', category: '社交', minRatio: 0.40 },
+                { code: 'S-09', content: '钱流向了你爱的人。', category: ['家庭', '社交'], minRatio: 0.35 },
+                { code: 'S-10', content: '你买下了整个游乐场。', category: '娱乐', minRatio: 0.45 },
+                { code: 'S-11', content: '你的世界，以家为圆心。', category: '家庭', minRatio: 0.40 },
+                { code: 'S-12', content: '你把自己活成了一座灯塔。', category: '事业', minRatio: 0.40 },
+                { code: 'S-13', content: '你的人生是一场流动的盛宴。', category: '体验', minRatio: 0.40 },
+                { code: 'S-14', content: '你用时间喂养了好奇心。', category: '认知', minRatio: 0.40 },
+                { code: 'S-15', content: '你把健康写进了日常。', category: '健康', minRatio: 0.40 },
+                { code: 'S-16', content: '你为快乐买了单。', category: '娱乐', minRatio: 0.40 },
+                { code: 'S-17', content: '你的人脉，就是你的江山。', category: '社交', minRatio: 0.40 },
+            ],
+            W: [
+                { code: 'W-01', content: '你从未为自己的身体花过一天。', category: '健康', maxRatio: 0.03 },
+                { code: 'W-02', content: '你的世界里，没有留给人。', category: ['家庭', '社交'], maxRatio: 0.03 },
+                { code: 'W-03', content: '你忘了给自己买一点快乐。', category: '娱乐', maxRatio: 0.03 },
+                { code: 'W-04', content: '这一生，你几乎没有休息过。', category: ['娱乐', '健康'], maxRatio: 0.05 },
+                { code: 'W-05', content: '你的灵魂，一直饿着。', category: '认知', maxRatio: 0.03 },
+                { code: 'W-06', content: '你身边没有一个人。', category: ['社交', '家庭'], maxRatio: 0.03 },
+                { code: 'W-07', content: '你从未为自己活过。', maxRatio: 0.05 },
+                { code: 'W-08', content: '你走得太快，没带感情。', category: ['家庭', '社交'], maxRatio: 0.03 },
+                { code: 'W-09', content: '你忽略了身体发出的信号。', category: '健康', maxRatio: 0.03 },
+                { code: 'W-10', content: '你的生活里少了一点烟火气。', category: ['家庭', '社交'], maxRatio: 0.03 },
+                { code: 'W-11', content: '你忘了给自己留白。', category: '娱乐', maxRatio: 0.03 },
+                { code: 'W-12', content: '你的精神世界，荒芜了太久。', category: '认知', maxRatio: 0.03 },
+                { code: 'W-13', content: '你活成了一座孤岛。', category: ['社交', '家庭'], maxRatio: 0.03 },
+            ],
+            G: [
+                { code: 'G-01', content: '你想当富豪，却养了一整个家。', positioning: '1', gap: '家庭' },
+                { code: 'G-02', content: '你说要自由，却买了一屋子物质。', positioning: '3', gap: '消费' },
+                { code: 'G-03', content: '你想当学霸，却买了一堆快乐。', positioning: '4', gap: '娱乐' },
+                { code: 'G-04', content: '你说要健康，却买下了全世界。', positioning: '5', gap: ['体验', '消费'] },
+                { code: 'G-05', content: '你想闯世界，却困在了一盏灯下。', positioning: '3', gap: '家庭' },
+                { code: 'G-06', content: '你说要顾家，钱却都给了远方。', positioning: '2', gap: ['事业', '体验'] },
+                { code: 'G-07', content: '你想做自己，却活成了别人。', gap: 'severe' },
+                { code: 'G-08', content: '你喊着要躺平，却买出了满身野心。', positioning: '6', gap: ['事业', '消费'] },
+                { code: 'G-09', content: '你嘴上说随缘，行动却处处要强。', positioning: '6', gap: ['事业', '消费'] },
+                { code: 'G-10', content: '你向往星辰大海，却困于柴米油盐。', positioning: '3', gap: '家庭' },
+                { code: 'G-11', content: '你想做个闲人，却忙成了陀螺。', positioning: '6', gap: ['事业', '体验'] },
+            ],
+            E: [
+                { code: 'E-01', content: '你的账单，比你的嘴巴诚实。', style: '反思' },
+                { code: 'E-02', content: '时间买得到一切，买不到如果。', style: '反思' },
+                { code: 'E-03', content: '这一生，你活成了自己想要的样子。', style: '温暖' },
+                { code: 'E-04', content: '人间值得，你也值得。', style: '温暖' },
+                { code: 'E-05', content: '别再问时间去哪了，看账单。', style: '犀利' },
+                { code: 'E-06', content: '你的人生，和你嘴上说的不一样。', style: '犀利' },
+                { code: 'E-07', content: '下辈子还这么活？没人拦你。', style: '幽默' },
+                { code: 'E-08', content: '专家说这样不好，但快乐是真的。', style: '幽默' },
+                { code: 'E-09', content: '你买下了一座孤岛，风景不错。', style: '专属' },
+                { code: 'E-10', content: '自由很贵，你付了全价。', style: '专属' },
+                { code: 'E-11', content: '每一笔消费，都是你内心的投票。', style: '反思' },
+                { code: 'E-12', content: '你的人生，没有白活。', style: '温暖' },
+                { code: 'E-13', content: '你的选择，塑造了今天的你。', style: '反思' },
+                { code: 'E-14', content: '时间不语，却回答了所有。', style: '温暖' },
+                { code: 'E-15', content: '你活出了自己的版本。', style: '温暖' },
+                { code: 'E-16', content: '人生没有标准答案，但你有。', style: '反思' },
+            ]
+        };
+
+        const EASTER_EGGS = [
+            { priority: 1, code: 'X-01', content: '你活过了，而且活得很全。', condition: 'all_categories' },
+            { priority: 2, code: 'X-02', content: '你一分都没留给遗憾。', condition: 'total_spent>=28000' },
+            { priority: 3, code: 'X-03', content: '你的人生，全是顶配。', condition: 'legendary>=3' },
+            { priority: 4, code: 'X-04', content: '你买得起一切，却偏爱小东西。', condition: 'common>=10' },
+            { priority: 5, code: 'X-05', content: '你这辈子，只干了一件事。', condition: 'single_category' },
+            { priority: 6, code: 'X-06', content: '你犹豫了很久，但下手够狠。', condition: 'max_single>=900&passive>=0.4' },
+            { priority: 7, code: 'X-07', content: '第七次了，你还没活够。', condition: 'play_count==7' },
+            { priority: 8, code: 'X-08', content: '2026，你在这儿。', condition: 'total_spent==2026' },
+        ];
+
+        const CATEGORY_LIST = ['认知', '事业', '家庭', '社交', '消费', '体验', '娱乐', '健康'];
+
+        // ================================================================
+        //  3. 随机事件（纯负面，15个）
+        // ================================================================
+        const NEGATIVE_EVENTS = [
+            { id: 1, name: '突发疾病', desc: '你生了一场大病，住院休养。', delta: -1200 },
+            { id: 2, name: '意外受伤', desc: '不小心骨折，康复期漫长。', delta: -800 },
+            { id: 3, name: '失业打击', desc: '公司裁员，你失去了工作。', delta: -900 },
+            { id: 4, name: '家庭变故', desc: '亲人离世，你悲痛了很长一段时间。', delta: -1500 },
+            { id: 5, name: '投资失败', desc: '一次投资失误，损失惨重。', delta: -700 },
+            { id: 6, name: '官司缠身', desc: '卷入一场法律纠纷，心力交瘁。', delta: -1000 },
+            { id: 7, name: '慢性病困扰', desc: '患上了需要长期调理的慢性病。', delta: -600 },
+            { id: 8, name: '友谊破裂', desc: '与最好的朋友闹翻，心情低落。', delta: -400 },
+            { id: 9, name: '意外怀孕', desc: '打乱了所有计划，措手不及。', delta: -1100 },
+            { id: 10, name: '自然灾害', desc: '遭遇地震/洪水，家园受损。', delta: -1300 },
+            { id: 11, name: '职业瓶颈', desc: '多年努力却遭遇晋升天花板。', delta: -500 },
+            { id: 12, name: '被骗钱财', desc: '遭遇诈骗，多年积蓄一朝空。', delta: -800 },
+            { id: 13, name: '精神抑郁', desc: '长期抑郁，失去生活动力。', delta: -900 },
+            { id: 14, name: '宠物离世', desc: '陪伴多年的宠物去世，悲伤许久。', delta: -300 },
+            { id: 15, name: '交通意外', desc: '发生车祸，所幸无生命危险。', delta: -600 },
+        ];
+
+        // ================================================================
+        //  4. 游戏状态
+        // ================================================================
+        let state = {
+            balance: 30000,
+            totalSpent: 0,
+            passiveSpent: 0,
+            owned: {},
+            categorySpent: {},
+            playCount: 0,
+            positioning: null,
+            maxSinglePrice: 0,
+            legendaryCount: 0,
+            commonCount: 0,
+            currentTab: '全部',
+            isGameOver: false,
+            lastTick: Date.now(),
+            tickInterval: null,
+            // 事件系统
+            eventAccumulator: 0, // 累积秒数，每100秒触发
+        };
+
+        // ================================================================
+        //  5. 工具
+        // ================================================================
+        function formatNum(n) { return Math.floor(n).toLocaleString(); }
+
+        function getTotalSpent() { return state.totalSpent + state.passiveSpent; }
+
+        function getBalance() { return state.balance; }
+
+        function getOwnedCount() { return Object.keys(state.owned).length; }
+
+        function getCategoryDist() {
+            const dist = {};
+            CATEGORY_LIST.forEach(c => { dist[c] = state.categorySpent[c] || 0; });
+            return dist;
+        }
+
+        function getCategoryRatio(cat) {
+            const total = getTotalSpent();
+            if (total === 0) return 0;
+            return (state.categorySpent[cat] || 0) / total;
+        }
+
+        function isGoodsLocked(g) { return g.unlock > getTotalSpent(); }
+
+        function isGoodsOwned(g) { return !!state.owned[g.id]; }
+
+        function canBuy(g) {
+            if (isGoodsOwned(g)) return false;
+            if (isGoodsLocked(g)) return false;
+            return state.balance >= g.price;
+        }
+
+        // ================================================================
+        //  6. 购买
+        // ================================================================
+        function buyGoods(g) {
+            if (!canBuy(g)) return false;
+            state.balance -= g.price;
+            state.totalSpent += g.price;
+            state.owned[g.id] = true;
+            state.categorySpent[g.category] = (state.categorySpent[g.category] || 0) + g.price;
+            if (g.rarity === '传说') state.legendaryCount++;
+            if (g.rarity === '普通') state.commonCount++;
+            if (g.price > state.maxSinglePrice) state.maxSinglePrice = g.price;
+            renderAll();
+            checkUnlock();
+            return true;
+        }
+
+        function checkUnlock() {
+            const total = getTotalSpent();
+            if (total >= 6000 && total < 6000 + 50) showToast('✨ 解锁！史诗商品已上架');
+            if (total >= 9000 && total < 9000 + 50) showToast('🌟 解锁！传说商品已上架');
+        }
+
+        function showToast(msg, duration = 2500) {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                    position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+                    background:var(--text-primary);color:#fff;padding:10px 24px;
+                    border-radius:40px;font-size:14px;font-family:var(--font);
+                    box-shadow:0 8px 30px rgba(0,0,0,0.15);z-index:999;
+                    animation:fadeIn 0.3s ease;max-width:90%;text-align:center;
+                    letter-spacing:0.5px;
+                `;
+            div.textContent = msg;
+            document.body.appendChild(div);
+            setTimeout(() => {
+                div.style.opacity = '0';
+                div.style.transition = 'opacity 0.5s';
+                setTimeout(() => div.remove(), 500);
+            }, duration);
+        }
+
+        // ================================================================
+        //  7. 事件触发（每100秒）
+        // ================================================================
+        function triggerNegativeEvent() {
+            if (state.isGameOver) return;
+            // 随机选一个事件
+            const event = NEGATIVE_EVENTS[Math.floor(Math.random() * NEGATIVE_EVENTS.length)];
+            const loss = Math.abs(event.delta); // 正数
+            // 应用效果
+            if (state.balance <= 0) {
+                // 已经没时间了，不触发
+                return;
+            }
+            let actualLoss = Math.min(loss, state.balance);
+            state.balance -= actualLoss;
+            state.passiveSpent += actualLoss; // 记录被动消耗
+
+            // 如果归零则游戏结束
+            if (state.balance <= 0) {
+                state.balance = 0;
+                state.isGameOver = true;
+                showToast(`💔 ${event.name}：${event.desc} (失去了${actualLoss}天) · 时间耗尽`, 3500);
+                updateBalanceUI();
+                updateStatsUI();
+                return;
+            }
+
+            // 显示事件通知
+            showToast(`⚠️ ${event.name}：${event.desc} (失去了${actualLoss}天)`, 3000);
+            // 震动反馈
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // 更新UI
+            updateBalanceUI();
+            updateStatsUI();
+        }
+
+        // ================================================================
+        //  8. 时间流逝 + 事件计时
+        // ================================================================
+        function startTimeFlow() {
+            state.lastTick = Date.now();
+            state.eventAccumulator = 0;
+            if (state.tickInterval) clearInterval(state.tickInterval);
+            state.tickInterval = setInterval(() => {
+                if (state.isGameOver) return;
+                const now = Date.now();
+                const delta = (now - state.lastTick) / 1000;
+                state.lastTick = now;
+
+                // 自然流逝
+                if (state.balance > 0) {
+                    const passive = delta * 14;
+                    const spend = Math.min(passive, state.balance);
+                    state.balance -= spend;
+                    state.passiveSpent += spend;
+                    updateBalanceUI();
+                    updateStatsUI();
+                }
+
+                // 检查是否归零
+                if (state.balance <= 0 && !state.isGameOver) {
+                    state.balance = 0;
+                    state.isGameOver = true;
+                    updateBalanceUI();
+                    showToast('⏳ 时间用完了… 点击结算查看账单', 3000);
+                }
+
+                // ---- 事件累计 ----
+                if (!state.isGameOver) {
+                    state.eventAccumulator += delta;
+                    if (state.eventAccumulator >= 100) {
+                        state.eventAccumulator -= 100;
+                        triggerNegativeEvent();
+                    }
+                }
+
+            }, 200);
+        }
+
+        // ================================================================
+        //  9. 评语生成（与之前相同，略调整）
+        // ================================================================
+        function generateComment() {
+            const dist = getCategoryDist();
+            const total = getTotalSpent();
+            const passive = state.passiveSpent;
+            const ratios = {};
+            CATEGORY_LIST.forEach(c => {
+                ratios[c] = total > 0 ? (dist[c] || 0) / total : 0;
+            });
+
+            // 彩蛋
+            const easterCtx = {
+                all_categories: CATEGORY_LIST.every(c => (dist[c] || 0) > 0),
+                total_spent: total,
+                legendary: state.legendaryCount,
+                common: state.commonCount,
+                single_category: CATEGORY_LIST.filter(c => (dist[c] || 0) > 0).length === 1,
+                max_single: state.maxSinglePrice,
+                passive: total > 0 ? passive / (total + passive) : 0,
+                play_count: state.playCount + 1,
+            };
+            for (const egg of EASTER_EGGS) {
+                let hit = false;
+                const cond = egg.condition;
+                if (cond === 'all_categories' && easterCtx.all_categories) hit = true;
+                else if (cond === 'total_spent>=28000' && easterCtx.total_spent >= 28000) hit = true;
+                else if (cond === 'legendary>=3' && easterCtx.legendary >= 3) hit = true;
+                else if (cond === 'common>=10' && easterCtx.common >= 10) hit = true;
+                else if (cond === 'single_category' && easterCtx.single_category) hit = true;
+                else if (cond === 'max_single>=900&passive>=0.4' && easterCtx.max_single >= 900 && easterCtx.passive >=
+                    0.4) hit = true;
+                else if (cond === 'play_count==7' && easterCtx.play_count === 7) hit = true;
+                else if (cond === 'total_spent==2026' && easterCtx.total_spent === 2026) hit = true;
+                if (hit) {
+                    return { comment: egg.content, code: egg.code, isEaster: true };
+                }
+            }
+
+            let candidates = [];
+            // S层
+            for (const t of TEMPLATES.S) {
+                let score = 0;
+                const cats = Array.isArray(t.category) ? t.category : [t.category];
+                let maxRatio = 0;
+                for (const c of cats) {
+                    if (ratios[c] !== undefined) maxRatio = Math.max(maxRatio, ratios[c]);
+                }
+                if (maxRatio >= (t.minRatio || 0)) {
+                    score = maxRatio >= 0.4 ? 80 : 60;
+                    if (maxRatio >= 0.5) score *= 1.2;
+                    score += (Math.random() * 10 - 5);
+                    candidates.push({ score, comment: t.content, code: t.code });
+                }
+            }
+            // W层
+            for (const t of TEMPLATES.W) {
+                let score = 0;
+                const cats = Array.isArray(t.category) ? t.category : [t.category];
+                let minRatio = 1;
+                for (const c of cats) {
+                    if (ratios[c] !== undefined) minRatio = Math.min(minRatio, ratios[c]);
+                }
+                if (minRatio <= (t.maxRatio || 0.03)) {
+                    score = minRatio <= 0.03 ? 80 : 60;
+                    if (minRatio === 0) score *= 1.2;
+                    score += (Math.random() * 10 - 5);
+                    candidates.push({ score, comment: t.content, code: t.code });
+                }
+            }
+            // G层
+            if (state.positioning) {
+                for (const t of TEMPLATES.G) {
+                    let score = 0;
+                    if (t.positioning === state.positioning) {
+                        const gapCats = Array.isArray(t.gap) ? t.gap : [t.gap];
+                        let gapHit = false;
+                        for (const g of gapCats) {
+                            if (g === 'severe') { gapHit = true; break; }
+                            if (ratios[g] !== undefined) {
+                                let minCat = '';
+                                let minVal = 1;
+                                for (const c of CATEGORY_LIST) {
+                                    if (ratios[c] < minVal) { minVal = ratios[c];
+                                        minCat = c; }
+                                }
+                                if (minCat === g) gapHit = true;
+                            }
+                        }
+                        if (gapHit) {
+                            score = 90 + (Math.random() * 6 - 3);
+                            candidates.push({ score, comment: t.content, code: t.code });
+                        }
+                    }
+                }
+                const posMap = { '1': '事业', '2': '家庭', '3': '体验', '4': '认知', '5': '健康', '6': null };
+                const posCat = posMap[state.positioning];
+                if (posCat) {
+                    let minCat = '';
+                    let minVal = 1;
+                    for (const c of CATEGORY_LIST) {
+                        if (ratios[c] < minVal) { minVal = ratios[c];
+                            minCat = c; }
+                    }
+                    if (minCat !== posCat) {
+                        for (const t of TEMPLATES.G) {
+                            if (t.positioning === state.positioning) {
+                                let score = 60 + (Math.random() * 8 - 4);
+                                candidates.push({ score, comment: t.content, code: t.code });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            // E层兜底
+            const eList = TEMPLATES.E;
+            for (let i = 0; i < Math.min(3, eList.length); i++) {
+                const idx = Math.floor(Math.random() * eList.length);
+                const t = eList[idx];
+                let score = 30 + Math.random() * 15;
+                candidates.push({ score, comment: t.content, code: t.code });
+            }
+            if (candidates.length === 0) {
+                const t = eList[Math.floor(Math.random() * eList.length)];
+                candidates.push({ score: 30, comment: t.content, code: t.code });
+            }
+            candidates.sort((a, b) => b.score - a.score);
+            const best = candidates[0];
+            return { comment: best.comment, code: best.code, isEaster: false };
+        }
+
+        // ================================================================
+        //  10. UI 渲染
+        // ================================================================
+        function renderTabs() {
+            const container = document.getElementById('tabsContainer');
+            const allCats = ['全部', ...CATEGORY_LIST];
+            container.innerHTML = allCats.map(cat => {
+                const active = cat === state.currentTab ? 'active' : '';
+                const count = cat === '全部' ? GOODS_DATA.length :
+                    GOODS_DATA.filter(g => g.category === cat).length;
+                return `<button class="tab-btn ${active}" data-cat="${cat}">${cat} <span class="count">${count}</span></button>`;
+            }).join('');
+            container.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.currentTab = btn.dataset.cat;
+                    renderTabs();
+                    renderGoods();
+                });
+            });
+        }
+
+        function renderGoods() {
+            const grid = document.getElementById('goodsGrid');
+            let list = GOODS_DATA.filter(g => {
+                if (state.currentTab !== '全部' && g.category !== state.currentTab) return false;
+                return true;
+            });
+            list.sort((a, b) => a.price - b.price);
+
+            grid.innerHTML = list.map(g => {
+                const owned = isGoodsOwned(g);
+                const locked = isGoodsLocked(g);
+                const can = canBuy(g);
+                const cls = locked ? 'goods-card locked' : 'goods-card';
+                const btnText = owned ? '✅ 已拥有' : locked ? '🔒 未解锁' : `购买 ${g.price}天`;
+                const disabled = !can ? 'disabled' : '';
+                const ownedCls = owned ? 'owned' : '';
+                const rarityCls = `rarity-${g.rarity}`;
+                return `
+                        <div class="${cls}" data-id="${g.id}">
+                            <div class="name">${g.name}</div>
+                            <div class="meta">
+                                <span class="rarity ${rarityCls}">${g.rarity}</span>
+                                <span>${g.category}</span>
+                            </div>
+                            <div class="price">${g.price} <small>天</small></div>
+                            <button class="buy-btn ${ownedCls}" data-id="${g.id}" ${disabled}>${btnText}</button>
+                            ${owned ? '<span class="tag-owned">✔</span>' : ''}
+                        </div>
+                    `;
+            }).join('');
+
+            grid.querySelectorAll('.buy-btn:not([disabled])').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    const g = GOODS_DATA.find(item => item.id === id);
+                    if (g) {
+                        buyGoods(g);
+                        if (navigator.vibrate) navigator.vibrate(10);
+                    }
+                });
+            });
+        }
+
+        function updateBalanceUI() {
+            const el = document.getElementById('balanceDisplay');
+            const val = Math.floor(state.balance);
+            el.textContent = formatNum(val);
+            el.className = 'amount';
+            if (val < 3000) el.classList.add('low');
+            else if (val < 8000) el.classList.add('warn');
+        }
+
+        function updateStatsUI() {
+            document.getElementById('spentDisplay').textContent = formatNum(getTotalSpent());
+            document.getElementById('ownedCount').textContent = getOwnedCount();
+            document.getElementById('passiveDisplay').textContent = formatNum(state.passiveSpent);
+        }
+
+        function renderAll() {
+            updateBalanceUI();
+            updateStatsUI();
+            renderGoods();
+            renderTabs();
+        }
+
+        // ================================================================
+        //  11. 结算弹窗
+        // ================================================================
+        function showSettlement() {
+            const result = generateComment();
+            state.playCount++;
+            const container = document.getElementById('modalContainer');
+            const dist = getCategoryDist();
+            const total = getTotalSpent();
+            const isEaster = result.isEaster;
+
+            let statsHTML = CATEGORY_LIST.map(c => {
+                const val = dist[c] || 0;
+                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                return `<div><span class="label">${c}</span></div><div class="value">${formatNum(val)}天 (${pct}%)</div>`;
+            }).join('');
+
+            container.innerHTML = `
+                    <div class="modal-overlay" id="modalOverlay">
+                        <div class="modal-box">
+                            <div class="badge ${isEaster ? 'easter' : ''}">${isEaster ? '🎉 隐藏彩蛋' : '📜 人生账单'}</div>
+                            <div class="comment">${result.comment}</div>
+                            <div class="sub-comment">${isEaster ? '✨ 你触发了特殊的命运轨迹' : '—— 你的时间账单，写下了这一切 ——'}</div>
+                            <div class="stats-breakdown">
+                                ${statsHTML}
+                            </div>
+                            <div style="font-size:12px;color:var(--text-light);margin-bottom:10px;">
+                                总消费 ${formatNum(total)} 天 · 已购 ${getOwnedCount()} 件 · 第 ${state.playCount} 次人生
+                            </div>
+                            <button class="btn-close" id="btnCloseModal">重新开始</button>
+                        </div>
+                    </div>
+                `;
+
+            document.getElementById('modalOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeModal();
+            });
+            document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+        }
+
+        function closeModal() {
+            document.getElementById('modalContainer').innerHTML = '';
+            resetGame();
+        }
+
+        // ================================================================
+        //  12. 重置 & 启动
+        // ================================================================
+        function resetGame() {
+            if (state.tickInterval) clearInterval(state.tickInterval);
+            state.balance = 30000;
+            state.totalSpent = 0;
+            state.passiveSpent = 0;
+            state.owned = {};
+            state.categorySpent = {};
+            state.isGameOver = false;
+            state.maxSinglePrice = 0;
+            state.legendaryCount = 0;
+            state.commonCount = 0;
+            state.currentTab = '全部';
+            state.eventAccumulator = 0;
+            state.lastTick = Date.now();
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('startScreen').style.display = 'flex';
+            document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+            state.positioning = null;
+            document.getElementById('btnStart').classList.remove('active');
+        }
+
+        function startGame(positioning) {
+            state.positioning = positioning;
+            state.playCount = 0;
+            state.balance = 30000;
+            state.totalSpent = 0;
+            state.passiveSpent = 0;
+            state.owned = {};
+            state.categorySpent = {};
+            state.isGameOver = false;
+            state.maxSinglePrice = 0;
+            state.legendaryCount = 0;
+            state.commonCount = 0;
+            state.currentTab = '全部';
+            state.eventAccumulator = 0;
+            state.lastTick = Date.now();
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').style.display = 'flex';
+
+            renderAll();
+            startTimeFlow();
+        }
+
+        // ================================================================
+        //  13. 事件绑定
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.pos-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    state.positioning = btn.dataset.pos;
+                    document.getElementById('btnStart').classList.add('active');
+                });
+            });
+
+            document.getElementById('btnStart').addEventListener('click', () => {
+                if (state.positioning) startGame(state.positioning);
+            });
+
+            document.getElementById('btnSettle').addEventListener('click', () => {
+                if (getTotalSpent() === 0 && state.passiveSpent === 0) {
+                    showToast('至少买点东西吧… 别白活一辈子', 2000);
+                    return;
+                }
+                showSettlement();
+            });
+
+            document.getElementById('btnReset').addEventListener('click', () => {
+                if (confirm('重新开始？当前进度将丢失。')) resetGame();
+            });
+
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('gameScreen').style.display = 'none';
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) state.lastTick = Date.now();
+            else state.lastTick = Date.now();
+        });
+
+        console.log('📖 时间买家 V2.2 加载完成 — 含负面随机事件（每100秒）');
+        console.log(`📦 商品: ${GOODS_DATA.length} 件`);
+        console.log(`⚠️ 负面事件: ${NEGATIVE_EVENTS.length} 种`);
+    </script>
+
+</body>
+</html>
